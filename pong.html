@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu Pong</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #1a1a2e;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            text-align: center;
+        }
+        
+        button {
+            font-size: 2rem;
+            padding: 1rem 2rem;
+            background-color: #0f3460;
+            color: white;
+            border: solid 2px #c307ba;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border-radius: 20px;
+        }
+
+        button:hover {
+            background-color: #16213e;
+            border-radius: 100px;
+        }
+
+        canvas {
+            border-radius: 80px;
+            border: solid 2px #c307ba;
+            display: none;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            animation: fall 2s linear infinite;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(100vh);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <button onclick="startPongGame()">
+            <i class="fa-solid fa-gamepad"></i> Lancer le jeu Pong
+        </button>
+        <canvas id="pongCanvas" width="800" height="400"></canvas>
+    </div>
+    <script>
+        let playerScore = 0;
+        let aiScore = 0;
+        const winningScore = 5;
+
+        function startPongGame() {
+            const canvas = document.getElementById('pongCanvas');
+            const context = canvas.getContext('2d');
+            canvas.style.display = 'block';
+
+            const paddleWidth = 10, paddleHeight = 100, ballSize = 10;
+            let playerY = canvas.height / 2 - paddleHeight / 2;
+            let aiY = canvas.height / 2 - paddleHeight / 2;
+            let ballX = canvas.width / 2, ballY = canvas.height / 2;
+            let ballSpeedX = 5, ballSpeedY = 5;
+
+            function drawRect(x, y, width, height, color) {
+                context.fillStyle = color;
+                context.fillRect(x, y, width, height);
+            }
+
+            function drawCircle(x, y, radius, color) {
+                context.fillStyle = color;
+                context.beginPath();
+                context.arc(x, y, radius, 0, Math.PI * 2, false);
+                context.closePath();
+                context.fill();
+            }
+
+            function draw() {
+                drawRect(0, 0, canvas.width, canvas.height, 'rgba(0, 0, 0, 0.5)');
+                drawRect(0, playerY, paddleWidth, paddleHeight, '#e94560');
+                drawRect(canvas.width - paddleWidth, aiY, paddleWidth, paddleHeight, '#e94560');
+                drawCircle(ballX, ballY, ballSize, '#e94560');
+                context.fillText(`Player: ${playerScore}`, 50, 50);
+                context.fillText(`AI: ${aiScore}`, canvas.width - 100, 50);
+            }
+
+            function update() {
+                ballX += ballSpeedX;
+                ballY += ballSpeedY;
+
+                if (ballY + ballSize > canvas.height || ballY - ballSize < 0) {
+                    ballSpeedY = -ballSpeedY;
+                }
+
+                if (ballX - ballSize < 0) {
+                    if (ballY > playerY && ballY < playerY + paddleHeight) {
+                        ballSpeedX = -ballSpeedX;
+                    } else {
+                        aiScore++;
+                        resetBall();
+                    }
+                }
+
+                if (ballX + ballSize > canvas.width) {
+                    if (ballY > aiY && ballY < aiY + paddleHeight) {
+                        ballSpeedX = -ballSpeedX;
+                    } else {
+                        playerScore++;
+                        resetBall();
+                    }
+                }
+
+                aiY += (ballY - (aiY + paddleHeight / 2)) * 0.1;
+
+                if (playerScore >= winningScore) {
+                    celebrateWin();
+                } else if (aiScore >= winningScore) {
+                    window.location.href = 'msg.html';
+                }
+            }
+
+            function resetBall() {
+                ballX = canvas.width / 2;
+                ballY = canvas.height / 2;
+                ballSpeedX = -ballSpeedX;
+            }
+
+            function gameLoop() {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+
+            canvas.addEventListener('mousemove', (event) => {
+                const rect = canvas.getBoundingClientRect();
+                playerY = event.clientY - rect.top - paddleHeight / 2;
+            });
+
+            gameLoop();
+        }
+
+        function celebrateWin() {
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                document.body.appendChild(confetti);
+            }
+            setTimeout(() => {
+                document.querySelectorAll('.confetti').forEach(confetti => confetti.remove());
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>
